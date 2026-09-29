@@ -1,0 +1,32 @@
+{
+  "name":"@print-platform/console",
+  "private":true,
+  "version":"0.3.0",
+  "type":"module",
+  "scripts":{
+    "dev":"vite",
+    "test":"vitest run src",
+    "test:watch":"vitest src",
+    "test:print":"playwright test tests/print-pdf.spec.ts",
+    "build":"vue-tsc --noEmit && vite build && node scripts/check-build-size.mjs",
+    "preview":"vite preview"
+  },
+  "dependencies":{
+    "ant-design-vue":"^4.2.6",
+    "axios":"^1.12.2",
+    "jsbarcode":"^3.12.1",
+    "qrcode":"^1.5.4",
+    "vue":"^3.5.21"
+  },
+  "devDependencies":{
+    "@playwright/test":"^1.55.0",
+    "@types/jsbarcode":"^3.11.4",
+    "@types/qrcode":"^1.5.5",
+    "@vitejs/plugin-vue":"^6.0.1",
+    "pdf-lib":"^1.17.1",
+    "typescript":"^5.9.2",
+    "vite":"^7.1.7",
+    "vitest":"5.0.1",
+    "vue-tsc":"^3.0.7"
+  }
+}

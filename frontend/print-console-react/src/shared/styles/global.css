@@ -1,0 +1,88 @@
+:root{
+  font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  color:#17365f;
+  background:#f4f9fd;
+  font-synthesis:none;
+  text-rendering:optimizeLegibility;
+}
+*{box-sizing:border-box}
+html,body,#root{min-width:320px;min-height:100%;margin:0}
+body{min-height:100vh}
+button,input,textarea,select{font:inherit}
+
+:root[data-theme="light"]{
+  --app-bg:#f4f8fc;
+  --panel-bg:rgba(255,255,255,.9);
+  --panel-border:#dfe9f4;
+  --text-main:#17365f;
+  --text-muted:#7c90a8;
+  --sider-bg:rgba(248,252,255,.96);
+}
+:root[data-theme="dark"]{
+  --app-bg:#0d1420;
+  --panel-bg:rgba(20,31,46,.94);
+  --panel-border:#26384e;
+  --text-main:#e8f0fb;
+  --text-muted:#92a4ba;
+  --sider-bg:rgba(13,20,32,.97);
+}
+
+.app-shell{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 82% 5%,rgba(70,135,255,.12),transparent 30%),
+    var(--app-bg);
+}
+.app-sider{
+  position:sticky!important;
+  top:0;
+  height:100vh;
+  border-right:1px solid var(--panel-border);
+  background:var(--sider-bg)!important;
+  backdrop-filter:blur(18px);
+}
+.app-sider .ant-layout-sider-children{display:flex;flex-direction:column}
+.app-sider .ant-menu{border-inline-end:0!important;background:transparent!important}
+.brand{display:flex;align-items:center;gap:11px;min-height:72px;padding:16px;border-bottom:1px solid var(--panel-border);overflow:hidden}
+.brand-mark{display:grid;place-items:center;flex:0 0 40px;height:40px;border-radius:13px;background:linear-gradient(145deg,#5dbcf2,#2a78dc);color:#fff;font-size:18px;font-weight:800;box-shadow:0 8px 20px rgba(42,120,220,.22)}
+.brand strong{display:block;color:var(--text-main);white-space:nowrap}
+.brand small{display:block;margin-top:2px;color:var(--text-muted);font-size:10px;white-space:nowrap}
+
+.app-main{min-width:0;background:transparent!important}
+.app-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 24px!important;border-bottom:1px solid var(--panel-border);background:var(--panel-bg)!important;backdrop-filter:blur(18px)}
+.header-left,.header-actions{display:flex;align-items:center;gap:12px}
+.context span{display:block;color:var(--text-muted);font-size:10px}
+.context strong{display:block;margin-top:1px;color:var(--text-main);font-size:13px}
+.app-content{width:100%;max-width:1760px;margin:0 auto;padding:24px 28px 36px}
+
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.page-header h1{margin:4px 0;color:var(--text-main);font-size:30px;line-height:1.2}
+.page-header p{max-width:850px;margin:0;color:var(--text-muted);line-height:1.75}
+.page-eyebrow{color:#2b79dd;font-size:11px;font-weight:800;letter-spacing:.12em}
+.page-actions{display:flex;align-items:center;gap:8px}
+
+.foundation-card{height:100%;border-color:var(--panel-border)!important;background:var(--panel-bg)!important}
+.foundation-card .ant-card-body{display:flex;flex-direction:column;gap:5px;min-height:150px}
+.foundation-card strong{color:var(--text-main);font-size:22px}
+.foundation-card span{color:var(--text-muted);font-size:12px;line-height:1.6}
+.foundation-icon{margin-bottom:8px;color:#2475df;font-size:24px}
+.foundation-icon.success{color:#16a36f}
+.baseline-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.baseline-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid var(--panel-border);border-radius:12px;background:var(--panel-bg)}
+.baseline-item span{color:var(--text-muted);font-size:12px}
+.baseline-item strong{color:#1677ff;font-size:11px}
+.state-panel{display:grid;place-items:center;gap:12px;min-height:240px;padding:28px;border:1px dashed var(--panel-border);border-radius:18px;background:var(--panel-bg);text-align:center}
+.state-panel p{max-width:560px;margin:0;color:var(--text-muted)}
+.migration-caption{color:var(--text-muted);font-size:11px;letter-spacing:.08em}
+
+@media(max-width:960px){
+  .app-content{padding:18px}
+  .header-actions .ant-tag{display:none}
+  .baseline-grid{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .app-sider{display:none}
+  .app-header{padding:0 14px!important}
+  .app-content{padding:14px}
+  .page-header{flex-direction:column}
+}

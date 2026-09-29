@@ -1,0 +1,21 @@
+{
+  "compilerOptions":{
+    "target":"ES2022",
+    "useDefineForClassFields":true,
+    "module":"ESNext",
+    "moduleResolution":"Bundler",
+    "strict":true,
+    "jsx":"preserve",
+    "resolveJsonModule":true,
+    "isolatedModules":true,
+    "esModuleInterop":true,
+    "lib":["ES2022","DOM","DOM.Iterable"],
+    "skipLibCheck":true,
+    "types":["vite/client"],
+    "paths":{
+      "@print-platform/sdk-core":["../../sdk/print-sdk-core/src/index.ts"],
+      "@print-platform/preview-browser":["../../sdk/print-preview-browser/src/index.ts"]
+    }
+  },
+  "include":["src/**/*.ts","src/**/*.vue","vite.config.ts"]
+}

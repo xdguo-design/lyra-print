@@ -1,0 +1,318 @@
+from __future__ import annotations
+
+from sqlalchemy import Column, Float, ForeignKey, Integer, MetaData, String, Table, Text, UniqueConstraint
+
+metadata = MetaData()
+
+print_task = Table(
+    "print_task", metadata,
+    Column("id", String, primary_key=True),
+    Column("template_code", String, nullable=False),
+    Column("template_version", Integer),
+    Column("business_key", String, nullable=False),
+    Column("snapshot_id", String, nullable=False),
+    Column("printer_id", String),
+    Column("copies", Integer, nullable=False),
+    Column("status", String, nullable=False),
+    Column("attempts", Integer, nullable=False, default=0),
+    Column("message", Text),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+print_snapshot = Table(
+    "print_snapshot", metadata,
+    Column("id", String, primary_key=True),
+    Column("task_id", String, ForeignKey("print_task.id"), nullable=False, unique=True),
+    Column("payload_json", Text, nullable=False, default="{}"),
+    Column("created_at", String, nullable=False),
+)
+
+print_attempt = Table(
+    "print_attempt", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("task_id", String, ForeignKey("print_task.id"), nullable=False),
+    Column("attempt_no", Integer, nullable=False),
+    Column("printer_id", String),
+    Column("status", String, nullable=False),
+    Column("message", Text),
+    Column("agent_job_id", String),
+    Column("spooler_job_id", Integer),
+    Column("spooler_document_name", String),
+    Column("spooler_status", String),
+    Column("spooler_bound_at", String),
+    Column("spooler_last_observed_at", String),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+printer_profile = Table(
+    "printer_profile", metadata,
+    Column("printer_id", String, primary_key=True),
+    Column("display_name", String, nullable=False),
+    Column("location", String),
+    Column("enabled", Integer, nullable=False, default=1),
+    Column("default_printer", Integer, nullable=False, default=0),
+    Column("notes", Text),
+    Column("offset_x_mm", Float, nullable=False, default=0),
+    Column("offset_y_mm", Float, nullable=False, default=0),
+    Column("scale_percent", Float, nullable=False, default=100),
+    Column("duplex_mode", String, nullable=False, default="SIMPLEX"),
+    Column("color_mode", String, nullable=False, default="AUTO"),
+    Column("fit_mode", String, nullable=False, default="ACTUAL"),
+    Column("paper_source", String),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+data_source_connection = Table(
+    "data_source_connection", metadata,
+    Column("id", String, primary_key=True),
+    Column("name", String, nullable=False),
+    Column("db_type", String, nullable=False),
+    Column("jdbc_url", String, nullable=False),
+    Column("username", String),
+    Column("secret_ref", String),
+    Column("read_only", Integer, nullable=False, default=1),
+    Column("enabled", Integer, nullable=False, default=1),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+print_template = Table(
+    "print_template", metadata,
+    Column("id", String, primary_key=True),
+    Column("code", String, nullable=False, unique=True),
+    Column("name", String, nullable=False),
+    Column("document_type", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("draft_revision", Integer, nullable=False, default=1),
+    Column("published_version", Integer),
+    Column("design_json", Text, nullable=False),
+    Column("sample_data_json", Text, nullable=False),
+    Column("data_config_json", Text, nullable=False, default='{"schemaVersion":1,"mode":"JSON","queries":[]}'),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+print_template_version = Table(
+    "print_template_version", metadata,
+    Column("id", String, primary_key=True),
+    Column("template_id", String, ForeignKey("print_template.id"), nullable=False),
+    Column("version_no", Integer, nullable=False),
+    Column("design_json", Text, nullable=False),
+    Column("sample_data_json", Text, nullable=False),
+    Column("data_config_json", Text, nullable=False, default='{"schemaVersion":1,"mode":"JSON","queries":[]}'),
+    Column("change_note", Text),
+    Column("created_at", String, nullable=False),
+    UniqueConstraint("template_id", "version_no"),
+)
+
+print_template_release = Table(
+    "print_template_release", metadata,
+    Column("id", String, primary_key=True),
+    Column("template_id", String, ForeignKey("print_template.id"), nullable=False),
+    Column("version_no", Integer, nullable=False),
+    Column("scope_type", String, nullable=False),
+    Column("scope_values_json", Text, nullable=False),
+    Column("rollback_from_version", Integer),
+    Column("active", Integer, nullable=False, default=1),
+    Column("created_at", String, nullable=False),
+)
+
+print_template_audit = Table(
+    "print_template_audit", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("template_id", String, ForeignKey("print_template.id"), nullable=False),
+    Column("action", String, nullable=False),
+    Column("detail_json", Text, nullable=False),
+    Column("created_at", String, nullable=False),
+)
+
+template_test_run = Table(
+    "template_test_run", metadata,
+    Column("id", String, primary_key=True),
+    Column("template_id", String, ForeignKey("print_template.id"), nullable=False),
+    Column("template_version", Integer),
+    Column("draft_revision", Integer),
+    Column("data_mode", String, nullable=False),
+    Column("test_type", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("render_status", String, nullable=False, default="NOT_STARTED"),
+    Column("print_channel", String, nullable=False, default="NONE"),
+    Column("print_status", String, nullable=False, default="NOT_REQUESTED"),
+    Column("printer_id", String),
+    Column("page_count", Integer),
+    Column("agent_job_id", String),
+    Column("error_code", String),
+    Column("message", Text),
+    Column("payload_persisted", Integer, nullable=False, default=0),
+    Column("input_params_json", Text),
+    Column("input_data_json", Text),
+    Column("render_data_json", Text),
+    Column("started_at", String, nullable=False),
+    Column("finished_at", String),
+    Column("elapsed_ms", Integer),
+)
+
+template_test_query = Table(
+    "template_test_query", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("test_run_id", String, ForeignKey("template_test_run.id"), nullable=False),
+    Column("query_id", String, nullable=False),
+    Column("name", String),
+    Column("result_key", String),
+    Column("result_type", String),
+    Column("order_no", Integer, nullable=False, default=0),
+    Column("status", String, nullable=False),
+    Column("row_count", Integer),
+    Column("elapsed_ms", Integer),
+    Column("error_code", String),
+    Column("error_message", Text),
+    Column("result_json", Text),
+)
+
+system_log = Table(
+    "system_log", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("level", String, nullable=False),
+    Column("module", String, nullable=False),
+    Column("event_type", String, nullable=False),
+    Column("message", Text, nullable=False),
+    Column("stack_trace", Text),
+    Column("request_id", String),
+    Column("task_id", String),
+    Column("attempt_id", Integer),
+    Column("agent_id", String),
+    Column("agent_instance_id", String),
+    Column("printer_id", String),
+    Column("spooler_job_id", Integer),
+    Column("host_name", String),
+    Column("ip_address", String),
+    Column("resolved", Integer, nullable=False, default=0),
+    Column("resolved_at", String),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+agent_instance = Table(
+    "agent_instance", metadata,
+    Column("agent_id", String, primary_key=True),
+    Column("instance_id", String, primary_key=True),
+    Column("host_name", String, nullable=False),
+    Column("ip_address", String),
+    Column("os_name", String, nullable=False),
+    Column("agent_version", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("cpu_usage", Float),
+    Column("memory_usage", Float),
+    Column("active_jobs", Integer, nullable=False, default=0),
+    Column("queued_jobs", Integer, nullable=False, default=0),
+    Column("printer_count", Integer, nullable=False, default=0),
+    Column("spooler_status", String),
+    Column("registered_at", String, nullable=False),
+    Column("last_heartbeat_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+agent_printer = Table(
+    "agent_printer", metadata,
+    Column("agent_id", String, primary_key=True),
+    Column("instance_id", String, primary_key=True),
+    Column("printer_id", String, primary_key=True),
+    Column("name", String, nullable=False),
+    Column("type", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("default_printer", Integer, nullable=False, default=0),
+    Column("driver_name", String),
+    Column("port_name", String),
+    Column("shared", Integer, nullable=False, default=0),
+    Column("share_name", String),
+    Column("location", String),
+    Column("comment", Text),
+    Column("paper_sizes_json", Text, nullable=False, default="[]"),
+    Column("first_seen_at", String, nullable=False),
+    Column("last_seen_at", String, nullable=False),
+)
+
+agent_heartbeat = Table(
+    "agent_heartbeat", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("agent_id", String, nullable=False),
+    Column("instance_id", String, nullable=False),
+    Column("cpu_usage", Float),
+    Column("memory_usage", Float),
+    Column("active_jobs", Integer, nullable=False, default=0),
+    Column("queued_jobs", Integer, nullable=False, default=0),
+    Column("printer_count", Integer, nullable=False, default=0),
+    Column("spooler_status", String),
+    Column("agent_version", String),
+    Column("created_at", String, nullable=False),
+)
+
+alert_rule = Table(
+    "alert_rule", metadata,
+    Column("code", String, primary_key=True),
+    Column("name", String, nullable=False),
+    Column("severity", String, nullable=False),
+    Column("enabled", Integer, nullable=False, default=1),
+    Column("window_seconds", Integer, nullable=False),
+    Column("threshold", Integer, nullable=False),
+    Column("description", Text),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+alert_event = Table(
+    "alert_event", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("rule_code", String, nullable=False),
+    Column("severity", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("resource_type", String, nullable=False),
+    Column("resource_id", String, nullable=False),
+    Column("message", Text, nullable=False),
+    Column("task_id", String),
+    Column("attempt_id", Integer),
+    Column("agent_id", String),
+    Column("printer_id", String),
+    Column("spooler_job_id", Integer),
+    Column("first_seen_at", String, nullable=False),
+    Column("last_seen_at", String, nullable=False),
+    Column("acked_at", String),
+    Column("resolved_at", String),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+template_ai_task = Table(
+    "template_ai_task", metadata,
+    Column("id", String, primary_key=True),
+    Column("template_id", String, nullable=False),
+    Column("provider", String, nullable=False),
+    Column("model", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("request_json", Text),
+    Column("result_json", Text),
+    Column("error_message", Text),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)
+
+template_installation = Table(
+    "template_installation", metadata,
+    Column("id", String, primary_key=True),
+    Column("local_template_id", String, ForeignKey("print_template.id"), nullable=False, unique=True),
+    Column("cloud_template_code", String, nullable=False),
+    Column("cloud_version", Integer, nullable=False),
+    Column("origin", String, nullable=False),
+    Column("account_id", String),
+    Column("entitlement_id", String),
+    Column("license_state", String, nullable=False),
+    Column("clone_allowed", Integer, nullable=False, default=0),
+    Column("last_verified_at", String),
+    Column("entitlement_valid_until", String),
+    Column("grace_until", String),
+    Column("installed_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+)

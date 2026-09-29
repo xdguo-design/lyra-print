@@ -1,0 +1,70 @@
+name: offline-acceptance-bundle
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-offline-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/print-platform-python/pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build Python backend offline wheelhouse
+        working-directory: backend/print-platform-python
+        run: |
+          python -m pip install --upgrade pip wheel
+          rm -rf /tmp/print-platform-wheelhouse
+          mkdir -p /tmp/print-platform-wheelhouse
+          python -m pip wheel . -w /tmp/print-platform-wheelhouse
+          ls -lh /tmp/print-platform-wheelhouse
+
+      - name: Install, audit and build frontend
+        working-directory: frontend/print-console
+        run: |
+          npm install
+          npm audit --json > /tmp/npm-audit.json
+          npm audit --audit-level=moderate
+          npm run test
+          npm run build
+
+      - name: Build Print Agent
+        working-directory: print-agent
+        run: |
+          npm install
+          npm run build
+
+      - name: Stage offline acceptance bundle
+        run: |
+          set -eux
+          rm -rf offline-bundle
+          mkdir -p offline-bundle/backend/wheelhouse offline-bundle/frontend offline-bundle/print-agent/dist offline-bundle/scripts offline-bundle/reports
+          cp -R /tmp/print-platform-wheelhouse/. offline-bundle/backend/wheelhouse/
+          cp -R frontend/print-console/dist/. offline-bundle/frontend/
+          cp -R print-agent/dist/. offline-bundle/print-agent/dist/
+          cp tools/offline-acceptance/acceptance.mjs offline-bundle/scripts/
+          cp tools/offline-acceptance/README.md offline-bundle/README.md
+          cp /tmp/npm-audit.json offline-bundle/reports/npm-audit.json
+          printf '{"commit":"%s","builtAt":"%s","node":"22","python":"3.13","backend":"fastapi"}\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > offline-bundle/manifest.json
+          test -n "$(find offline-bundle/backend/wheelhouse -maxdepth 1 -name 'print_platform-*.whl' -print -quit)"
+          test -s offline-bundle/frontend/index.html
+          test -s offline-bundle/print-agent/dist/index.js
+          test -s offline-bundle/reports/npm-audit.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: print-platform-offline-acceptance
+          path: offline-bundle/
+          if-no-files-found: error
+          retention-days: 14

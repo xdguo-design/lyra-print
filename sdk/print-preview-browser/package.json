@@ -1,0 +1,17 @@
+{
+  "name":"@print-platform/preview-browser",
+  "version":"0.1.0",
+  "type":"module",
+  "main":"dist/index.js",
+  "types":"dist/index.d.ts",
+  "scripts":{"build":"tsc -p tsconfig.json"},
+  "dependencies":{
+    "jsbarcode":"^3.12.1",
+    "qrcode":"^1.5.4"
+  },
+  "devDependencies":{
+    "@types/jsbarcode":"^3.11.4",
+    "@types/qrcode":"^1.5.5",
+    "typescript":"^5.9.2"
+  }
+}

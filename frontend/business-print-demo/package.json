@@ -1,0 +1,26 @@
+{
+  "name":"@print-platform/business-print-demo",
+  "private":true,
+  "version":"0.1.0",
+  "type":"module",
+  "scripts":{
+    "bootstrap:sdk":"npm install --prefix ../../sdk/print-sdk-core && npm install --prefix ../../sdk/print-preview-browser",
+    "dev":"npm run bootstrap:sdk && vite --port 3000",
+    "build":"npm run bootstrap:sdk && vue-tsc --noEmit && vite build",
+    "preview":"vite preview --port 3000"
+  },
+  "dependencies":{
+    "vue":"^3.5.21",
+    "jsbarcode":"^3.12.1",
+    "qrcode":"^1.5.4"
+  },
+  "devDependencies":{
+    "@types/jsbarcode":"^3.11.4",
+    "@types/node":"^22.18.6",
+    "@types/qrcode":"^1.5.5",
+    "@vitejs/plugin-vue":"^6.0.1",
+    "typescript":"^5.9.2",
+    "vite":"^7.1.7",
+    "vue-tsc":"^3.0.7"
+  }
+}

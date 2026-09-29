@@ -1,0 +1,23 @@
+:root{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;color:#17365f;background:#f4f9fd}
+*{box-sizing:border-box}body{margin:0}
+.app-shell{min-height:100vh;background:linear-gradient(135deg,#fafdff,#eff8ff 58%,#fff7fa)}
+.side{border-right:1px solid #dceaf6}
+.brand{display:flex;gap:12px;align-items:center;padding:22px 18px;border-bottom:1px solid #e6f0f7}
+.brand strong{display:block;font-size:16px}.brand small{display:block;color:#7d96ad}
+.mark{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:#fff;font-weight:800;background:linear-gradient(145deg,#59b8ef,#2b7fda)}
+.content{padding:26px 30px;min-width:0}.studio-content{padding:12px;min-width:0;background:#eef4f8}
+.top-context{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;color:#7a91a7;font-size:12px}
+.page-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}
+.page-head h1{margin:4px 0;font-size:30px}.page-head p{margin:0;color:#6e86a0}
+.eyebrow{color:#2f86df;font-size:12px;letter-spacing:.12em}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.metrics .ant-card{border-radius:16px}.metrics span{color:#7c94aa;display:block}.metrics strong{display:block;margin-top:7px;font-size:28px}.metrics em{display:block;margin-top:4px;color:#4f8dbf;font-style:normal;font-size:12px}
+.overview-metrics .ant-card{cursor:pointer}
+.task-card,.source-grid .ant-card,.overview-grid .ant-card{border-radius:18px}
+.source-grid{display:grid;grid-template-columns:minmax(330px,420px) minmax(0,1fr);gap:18px}
+.form-actions{display:flex;gap:10px;margin-top:22px}.source-grid .ant-table-cell{word-break:break-all}
+.table-sub{margin-top:3px;color:#8a9eb0;font-size:11px;font-family:Consolas,monospace}
+.overview-grid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:18px}
+.capability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.capability-grid span{padding:10px 12px;border:1px solid #deebf4;border-radius:10px;background:#f8fcff;color:#527492}
+@media(max-width:1100px){.overview-grid,.source-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.side{display:none}.content{padding:16px}.page-head{flex-direction:column}.metrics{grid-template-columns:repeat(2,1fr)}}

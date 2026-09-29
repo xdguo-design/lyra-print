@@ -1,0 +1,243 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    env:
+      REDOCLY_TELEMETRY: off
+      REDOCLY_SUPPRESS_UPDATE_NOTICE: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.12.0' }
+      - run: node tools/contracts/validate-openapi.mjs contracts/openapi/print-platform.yaml
+      - run: npx --yes @redocly/cli@2.53.3 lint --extends spec contracts/openapi/print-platform.yaml
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend/print-platform-python } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/print-platform-python/pyproject.toml
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.12.0' }
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m compileall -q app tests
+      - run: python -m ruff check app tests
+      - run: python -m pytest
+      - name: Run legacy HTTP functional regression against FastAPI
+        run: node ../../tools/functional/functional-tests.mjs
+      - run: python -m pip check
+      - name: Verify Alembic bootstrap
+        shell: bash
+        run: |
+          rm -f /tmp/print-platform-alembic.db
+          PRINT_DATABASE_URL=sqlite:////tmp/print-platform-alembic.db alembic upgrade head
+          test -s /tmp/print-platform-alembic.db
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend/print-console } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=moderate
+      - run: npm run test
+      - run: npm run build
+
+  frontend-react-baseline:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend/print-console-react } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+      - run: pnpm install --no-frozen-lockfile
+      - name: Audit React baseline dependencies
+        run: pnpm audit --audit-level=moderate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  business-demo:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend/business-print-demo } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install
+      - name: Audit business demo dependencies
+        run: npm audit --audit-level=moderate
+      - run: npm run build
+
+  print-smoke:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend/print-console } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:print
+
+  sdk-and-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install && npm run build
+        working-directory: sdk/print-sdk-core
+      - run: npm install && npm run build
+        working-directory: sdk/print-preview-browser
+      - run: npm install && npm run build
+        working-directory: print-agent
+      - name: Smoke test print agent
+        working-directory: print-agent
+        run: |
+          node dist/index.js > /tmp/print-agent.log 2>&1 &
+          AGENT_PID=$!
+          trap 'kill $AGENT_PID || true' EXIT
+          node - <<'NODE'
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms))
+          for(let i=0;i<20;i++){
+            try{
+              const health=await fetch('http://127.0.0.1:18181/health')
+              if(health.ok)break
+            }catch{}
+            await sleep(250)
+          }
+          const response=await fetch('http://127.0.0.1:18181/print',{
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body:JSON.stringify({mode:'TEST',taskId:'PT-SMOKE-001',printerId:'cashier-a4-02',title:'Smoke',documentHtml:'<!doctype html><html><body>smoke</body></html>'})
+          })
+          if(response.status!==202)throw new Error('expected 202, got '+response.status)
+          const body=await response.json()
+          if(body.accepted!==true||body.taskId!=='PT-SMOKE-001'||body.executed!==false)throw new Error('invalid test print response '+JSON.stringify(body))
+
+          const production=await fetch('http://127.0.0.1:18181/print',{
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body:JSON.stringify({mode:'PRODUCTION',taskId:'PT-SMOKE-PROD',printerId:'cashier-a4-02',title:'Production Smoke',documentHtml:'<!doctype html><html><body>prod</body></html>'})
+          })
+          if(production.status!==503)throw new Error('mock production print must be rejected with 503, got '+production.status)
+          const productionBody=await production.json()
+          if(productionBody.error!=='production_print_not_enabled')throw new Error('invalid production guard '+JSON.stringify(productionBody))
+          console.log('print-agent smoke ok',body,productionBody)
+          NODE
+
+      - name: Smoke test production command adapter
+        working-directory: print-agent
+        env:
+          PRINT_AGENT_PORT: '18182'
+          PRINT_AGENT_ADAPTER: command
+          PRINT_AGENT_COMMAND: node
+          PRINT_AGENT_ARGS_JSON: '["test/fake-print-command.mjs","{file}","{printer}","{copies}","{duplex}","{color}","{fitMode}","{paperSource}"]'
+          PRINT_AGENT_PRINTERS_JSON: '[{"id":"fake-printer","name":"Fake Printer","type":"TEST","status":"ONLINE","isDefault":true}]'
+        run: |
+          node dist/index.js > /tmp/print-agent-command.log 2>&1 &
+          AGENT_PID=$!
+          trap 'kill $AGENT_PID || true' EXIT
+          node - <<'NODE'
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms))
+          for(let i=0;i<20;i++){
+            try{
+              const health=await fetch('http://127.0.0.1:18182/health')
+              if(health.ok){
+                const body=await health.json()
+                if(body.productionReady!==true)throw new Error('command adapter not ready '+JSON.stringify(body))
+                break
+              }
+            }catch{}
+            await sleep(250)
+          }
+          const response=await fetch('http://127.0.0.1:18182/print',{
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body:JSON.stringify({
+              mode:'PRODUCTION',taskId:'PT-COMMAND-001',printerId:'fake-printer',copies:2,
+              title:'Command Smoke',documentHtml:'<!doctype html><html><body>command-adapter-smoke</body></html>',
+              printOptions:{duplexMode:'LONG_EDGE',colorMode:'MONOCHROME',fitMode:'FIT',paperSource:'Tray 2'}
+            })
+          })
+          if(response.status!==200)throw new Error('expected 200, got '+response.status+' '+await response.text())
+          const body=await response.json()
+          if(body.executed!==true||body.status!=='SUCCESS'||body.copies!==2)throw new Error('invalid command print response '+JSON.stringify(body))
+          console.log('command adapter smoke ok',body)
+
+          const pdf='%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF'
+          const pdfResponse=await fetch('http://127.0.0.1:18182/print',{
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body:JSON.stringify({
+              mode:'PRODUCTION',taskId:'PT-PDF-001',printerId:'fake-printer',copies:2,
+              title:'PDF Smoke',documentKind:'PDF',documentBase64:Buffer.from(pdf).toString('base64'),
+              printOptions:{duplexMode:'LONG_EDGE',colorMode:'MONOCHROME',fitMode:'FIT',paperSource:'Tray 2'}
+            })
+          })
+          if(pdfResponse.status!==200)throw new Error('expected PDF 200, got '+pdfResponse.status+' '+await pdfResponse.text())
+          const pdfBody=await pdfResponse.json()
+          if(pdfBody.executed!==true||pdfBody.documentKind!=='PDF')throw new Error('invalid PDF print response '+JSON.stringify(pdfBody))
+
+          const spooler=await fetch('http://127.0.0.1:18182/spooler/jobs?printerId=fake-printer')
+          if(process.platform!=='win32'&&spooler.status!==501)throw new Error('non-Windows spooler monitor must return 501, got '+spooler.status)
+          NODE
+
+
+  windows-real-print:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/print-platform-python/pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Python backend
+        working-directory: backend/print-platform-python
+        run: python -m pip install -e .
+
+      - name: Build Print Agent
+        working-directory: print-agent
+        run: |
+          npm install
+          npm run build
+
+      - name: Real HTTP task -> Microsoft Print to PDF
+        timeout-minutes: 5
+        shell: powershell
+        run: ./tools/windows-acceptance/real-http-print.ps1
+
+      - name: Upload real Windows print artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-real-print
+          path: artifacts/windows-real-print/
+          if-no-files-found: error
+          retention-days: 14
