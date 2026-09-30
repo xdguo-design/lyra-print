@@ -9,6 +9,7 @@ import { Button, Layout, Menu, Segmented, Tag } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { appRoutes } from '@/app/router/route-meta'
 import { useUiStore, type ThemeMode } from '@/stores/use-ui-store'
+import { isLyraHubEmbedded } from '@/platform/lyra-hub'
 
 const { Header, Sider, Content } = Layout
 
@@ -27,6 +28,7 @@ export function AppShell() {
   const themeMode = useUiStore((state) => state.themeMode)
   const setThemeMode = useUiStore((state) => state.setThemeMode)
 
+  const hubEmbedded = isLyraHubEmbedded()
   const activeKey = selectedMenuKey(location.pathname)
   const activeLabel = appRoutes.find((item) => item.key === activeKey)?.label ?? '打印平台'
 
@@ -69,14 +71,14 @@ export function AppShell() {
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             />
             <div className="context">
-              <span>独立打印平台</span>
+              <span>{hubEmbedded ? 'Lyra Hub · 统一工作区' : '独立打印平台'}</span>
               <strong>{activeLabel}</strong>
             </div>
           </div>
 
           <div className="header-actions">
-            <Tag icon={<AppstoreOutlined />} color="blue">
-              React Migration
+            <Tag icon={<AppstoreOutlined />} color={hubEmbedded ? "purple" : "blue"}>
+              {hubEmbedded ? "Lyra Hub" : "React Migration"}
             </Tag>
             <Segmented
               size="small"

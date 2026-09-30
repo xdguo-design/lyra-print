@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 import { useUiStore } from '@/stores/use-ui-store'
 import { createAntdTheme } from '@/theme/theme'
+import { initLyraHubBridge } from '@/platform/lyra-hub'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,8 +34,17 @@ function useSystemDarkMode() {
 
 export function AppProviders({ children }: PropsWithChildren) {
   const themeMode = useUiStore((state) => state.themeMode)
+  const setThemeMode = useUiStore((state) => state.setThemeMode)
   const systemDark = useSystemDarkMode()
   const dark = themeMode === 'dark' || (themeMode === 'system' && systemDark)
+
+  useEffect(
+    () =>
+      initLyraHubBridge((context) => {
+        setThemeMode(context.theme)
+      }),
+    [setThemeMode],
+  )
 
   const config = useMemo(
     () => ({
