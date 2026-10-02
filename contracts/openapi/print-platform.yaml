@@ -62,6 +62,39 @@ paths:
               schema: { $ref: '#/components/schemas/PrintPreview' }
         '400': { $ref: '#/components/responses/BadRequest' }
 
+  /api/lyra/capabilities/print.execute:
+    post:
+      tags: [Business Integration]
+      operationId: executeLyraPrintCapability
+      description: |
+        Stable Lyra application-provider endpoint for the print.execute capability.
+        The payload selects template, PDF, or RAW task creation and may optionally queue the task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Capability execution result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [capability, result]
+                properties:
+                  capability: { type: string, const: print.execute }
+                  result:
+                    type: object
+                    additionalProperties: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+
   /api/print-tasks:
     get:
       tags: [Print Tasks]

@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .db import init_db
+from .lyra_capabilities import router as lyra_capabilities_router
 from .ops import api_key_role, extract_api_key
 from .ops import router as ops_router
 from .tasks import router as tasks_router
@@ -93,6 +94,8 @@ def _required_permission(method: str, path: str) -> str:
         return "ADMIN"
     if path.startswith("/api/print-tasks") or path.startswith("/api/print-previews"):
         return "OPERATE"
+    if path.startswith("/api/lyra/capabilities/"):
+        return "OPERATE"
     if path.startswith("/api/templates/") or path == "/api/templates" or path.startswith("/api/template-test-runs"):
         return "DESIGN"
     if path.startswith("/api/template-installations") or path.startswith("/api/cloud-templates/upload"):
@@ -148,6 +151,7 @@ async def security_filter(request: Request, call_next):
 
 
 app.include_router(ops_router)
+app.include_router(lyra_capabilities_router)
 app.include_router(tasks_router)
 app.include_router(templates_router)
 

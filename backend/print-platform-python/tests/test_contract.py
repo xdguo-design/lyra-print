@@ -28,5 +28,5 @@ def test_fastapi_routes_match_authoritative_openapi_contract():
         if method.lower() in HTTP_METHODS
     }
 
-    assert len(expected) == 78
+    assert len(expected) == 79
     assert actual == expected
