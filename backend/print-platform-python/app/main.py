@@ -10,9 +10,9 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .db import init_db
+from .lyra_capabilities import router as lyra_capabilities_router
 from .ops import api_key_role, extract_api_key
 from .ops import router as ops_router
-from .lyra_capabilities import router as lyra_capabilities_router
 from .tasks import router as tasks_router
 from .templates import router as templates_router
 
